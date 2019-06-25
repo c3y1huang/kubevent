@@ -38,5 +38,7 @@ Builtin K8s resource or CRD.
 
 ## Architecture
 
-TBU
+![Architecture](docs/arch.png)
+
+
 
