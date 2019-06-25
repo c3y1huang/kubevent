@@ -24,7 +24,7 @@ Publish K8s events of builtin or custom resource objects (CRD) from K8s clusters
 
 ### Kubevent Configs
 
-**Kubeevent Configs** provides a declarative way to configure registered events, connected event broker and others to Kubevent controller to apply.
+**Kubevent Configs** provides a declarative way to configure registered events, connected event broker and others to Kubevent controller to apply.
 
 ### Kubevent Event Publisher
 
