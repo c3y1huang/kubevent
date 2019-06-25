@@ -6,7 +6,7 @@ Publish K8s events of builtin or custom resource objects (CRD) from K8s clusters
 
 - Register resource events to subscribe
 - Publish the registered resource events to external event brokers
-- Expose metrics of registered resource events and published events
+- Support metrics of registered resource events and published events
 - Support extensible event brokers
 
 ## Non-Goals
