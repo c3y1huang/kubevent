@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/innobead/kubevent.svg?style=svg)](https://circleci.com/gh/innobead/kubevent)
+
 # Kubevent
 
 Publish K8s events of builtin or custom resource objects (CRD) from K8s clusters to external event brokers.
