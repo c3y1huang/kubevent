@@ -7,12 +7,10 @@ import (
 	"github.com/innobead/kubevent/pkg/reconciler"
 	"github.com/innobead/kubevent/pkg/util"
 	"github.com/mitchellh/mapstructure"
-	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
 	"os"
-	"path/filepath"
 	controllerruntime "sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
@@ -22,12 +20,12 @@ var (
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.kubevent/kubevent.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", config.DefaultConfigFile(), "config file")
 }
 
 func initConfig() {
 	if _, err := config.Init(cfgFile); err != nil {
-		log.Errorf("Failed to read %s", cfgFile)
+		log.Errorf("Failed to read '%s' or ", cfgFile)
 
 		os.Exit(1)
 	}
@@ -40,15 +38,6 @@ func Execute() error {
 var rootCmd = &cobra.Command{
 	Use:   "kubevent",
 	Short: "Kubevent, watch and publish events to external event brokers",
-	PreRunE: func(cmd *cobra.Command, args []string) error {
-		path, _ := filepath.Abs(cfgFile)
-
-		if info, err := os.Stat(path); os.IsNotExist(err) || info.IsDir() {
-			return errors.New("%s does not exist or not file")
-		}
-
-		return nil
-	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		eng, err := engine.New()
 		if err != nil {

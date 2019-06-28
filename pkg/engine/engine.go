@@ -76,16 +76,16 @@ func (receiver *ControllerEngine) CreateController(
 
 	bu := builder.ControllerManagedBy(receiver.Mgr)
 	for _, watchedApiType := range watchedApiTypes {
-		var s source.Source
+		var src source.Source
 
 		switch v := strings.ToLower(watchedApiType); v {
 		case "pod":
-			s = &source.Kind{Type: &v1.Pod{}}
+			src = &source.Kind{Type: &v1.Pod{}}
 		}
 
 		for _, eventHandler := range eventHandlers {
 			bu = bu.Watches(
-				s,
+				src,
 				eventHandler,
 			)
 		}
@@ -120,8 +120,10 @@ func (receiver *ControllerEngine) injectControllerEngineAware(value interface{})
 
 	switch reflect.TypeOf(value).Kind() {
 	case reflect.Slice, reflect.Array:
-		for _, v := range value.([]interface{}) {
-			update(v)
+		values := reflect.ValueOf(value)
+
+		for i := 0; i < values.Len(); i++ {
+			update(values.Index(i))
 		}
 
 	default:

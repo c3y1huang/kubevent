@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 var (
@@ -31,24 +33,44 @@ type AmqpSink struct {
 	Exchange string
 }
 
+var defaultConfigFile string
+
 func init() {
 	viper.AutomaticEnv()
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("$HOME/.kubevent")
+
+	configType := "yaml"
+	viper.SetConfigType(configType)
+
+	homeDir, _ := os.UserHomeDir()
+	configPath := filepath.Join(homeDir, ".kubevent")
+	viper.AddConfigPath(configPath)
+
+	configName := "config"
+	viper.SetConfigName(configName)
+
+	defaultConfigFile = filepath.Join(configPath, configName) + "." + configType
+}
+
+func DefaultConfigFile() string {
+	return defaultConfigFile
 }
 
 func Init(cfgFile string) (*Config, error) {
-	data, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		return nil, err
-	}
+	path, _ := filepath.Abs(cfgFile)
 
-	if err := viper.ReadConfig(bytes.NewBuffer(data)); err != nil {
-		return nil, err
-	}
+	if info, err := os.Stat(path); !os.IsNotExist(err) && !info.IsDir() {
+		data, err := ioutil.ReadFile(cfgFile)
+		if err != nil {
+			return nil, err
+		}
 
-	if err := viper.ReadInConfig(); err != nil {
-		return nil, err
+		if err := viper.ReadConfig(bytes.NewBuffer(data)); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := viper.ReadInConfig(); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := viper.Unmarshal(&cfg); err != nil {

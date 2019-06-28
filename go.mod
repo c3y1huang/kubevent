@@ -33,7 +33,7 @@ require (
 	k8s.io/klog v0.3.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20190603182131-db7b694dc208 // indirect
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
-	sigs.k8s.io/controller-runtime v0.2.0-beta.1.0.20190628002521-b5e34e45a56a
+	sigs.k8s.io/controller-runtime v0.2.0-beta.1.0.20190628181139-28262f4974c4
 )
 
 replace github.com/appscode/jsonpatch => gomodules.xyz/jsonpatch/v2 v2.0.0
