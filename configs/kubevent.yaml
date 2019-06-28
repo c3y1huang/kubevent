@@ -1,0 +1,10 @@
+resources:
+  - group: core
+    version: v1
+    kind: pod
+
+sinks:
+  - type: amqp
+    value:
+      uri: "amqp://guest:guest@localhost:5672/"
+      exchange: kubevent
