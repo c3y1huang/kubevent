@@ -1,12 +1,13 @@
 package engine
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -17,6 +18,7 @@ import (
 
 type ControllerEngineFunctions interface {
 	CreateController(
+		name string,
 		watchedApiTypes []string,
 		eventHandlers []handler.EventHandler,
 		reconciler reconcile.Reconciler,
@@ -66,6 +68,7 @@ func (receiver *ControllerEngine) Stop() error {
 }
 
 func (receiver *ControllerEngine) CreateController(
+	name string,
 	watchedApiTypes []string,
 	eventHandlers []handler.EventHandler,
 	reconciler reconcile.Reconciler,
@@ -74,7 +77,13 @@ func (receiver *ControllerEngine) CreateController(
 	receiver.injectControllerEngineAware(reconciler)
 	receiver.injectControllerEngineAware(eventHandlers)
 
-	bu := builder.ControllerManagedBy(receiver.Mgr)
+	ctrl, err := controller.New(fmt.Sprintf("%s-controller", name), receiver.Mgr, controller.Options{
+		Reconciler: reconciler,
+	})
+	if err != nil {
+		return err
+	}
+
 	for _, watchedApiType := range watchedApiTypes {
 		var src source.Source
 
@@ -84,15 +93,14 @@ func (receiver *ControllerEngine) CreateController(
 		}
 
 		for _, eventHandler := range eventHandlers {
-			bu = bu.Watches(
+			err := ctrl.Watch(
 				src,
 				eventHandler,
 			)
+			if err != nil {
+				return err
+			}
 		}
-	}
-
-	if err := bu.Complete(reconciler); err != nil {
-		return errors.WithMessage(err, "")
 	}
 
 	if receiver.mgrStopCh != nil {

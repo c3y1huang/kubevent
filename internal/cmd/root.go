@@ -69,6 +69,7 @@ var rootCmd = &cobra.Command{
 		}
 
 		err = eng.CreateController(
+			"kubevent",
 			watchedApiTypes,
 			eventHandlers,
 			&reconciler.DummyReconciler{},
