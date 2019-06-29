@@ -10,7 +10,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/thoas/go-funk"
-	"os"
 	controllerruntime "sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
@@ -25,9 +24,7 @@ func init() {
 
 func initConfig() {
 	if _, err := config.Init(cfgFile); err != nil {
-		log.Errorf("Failed to read '%s' or ", cfgFile)
-
-		os.Exit(1)
+		log.Fatalf("Failed to read '%s' or ", cfgFile)
 	}
 }
 

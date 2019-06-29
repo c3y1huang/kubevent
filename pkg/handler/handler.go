@@ -5,7 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
-	controllerruntime "sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
 type Operation interface {
@@ -13,26 +14,38 @@ type Operation interface {
 	Stop() error
 }
 
-func sendEvent(broker broker.Operation, event interface{}) {
-	eventType := reflect.TypeOf(event).Name()
+type BaseHandler struct {
+	handler.EventHandler
+	handler.EnqueueRequestForObject
+}
 
-	var eventMeta interface{}
+func sendEvent(broker broker.Operation, e interface{}) error {
+	eventType := reflect.TypeOf(e).Name()
 
-	switch e := event.(type) {
-	case controllerruntime.CreateEvent:
-		eventMeta = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
+	var objName interface{}
 
-	case controllerruntime.UpdateEvent:
-		eventMeta = types.NamespacedName{Namespace: e.MetaOld.GetNamespace(), Name: e.MetaOld.GetName()}
+	switch e := e.(type) {
+	case event.CreateEvent:
+		objName = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
 
-	case controllerruntime.DeleteEvent:
-		eventMeta = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
+	case event.UpdateEvent:
+		objName = types.NamespacedName{Namespace: e.MetaOld.GetNamespace(), Name: e.MetaOld.GetName()}
 
-	case controllerruntime.GenericEvent:
-		eventMeta = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
+	case event.DeleteEvent:
+		objName = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
+
+	case event.GenericEvent:
+		objName = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
 	}
 
-	if err := broker.Send(event); err != nil {
-		log.Errorf("Failed to send msg from %s, %v", eventType, eventMeta)
+	if err := broker.Send(e); err != nil {
+		log.WithFields(log.Fields{
+			"type": eventType,
+			"name": objName,
+		}).Error("Failed to send msg")
+
+		return err
 	}
+
+	return nil
 }

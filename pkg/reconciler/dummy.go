@@ -9,7 +9,7 @@ type DummyReconciler struct {
 }
 
 func (*DummyReconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	log.Debugf("Reconciling %v", req)
+	log.WithField("request", req).Info("Reconciling") // TODO change to Debug
 
 	return reconcile.Result{}, nil
 }

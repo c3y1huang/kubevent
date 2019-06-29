@@ -3,6 +3,7 @@ package engine
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/prometheus/common/log"
 	v1 "k8s.io/api/core/v1"
 	apiextclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	"reflect"
@@ -52,19 +53,19 @@ func New() (ControllerEngineFunctions, error) {
 }
 
 func (receiver *ControllerEngine) Start() error {
+	log.Infoln("Starting controller engine")
+
 	if err := receiver.Mgr.Start(receiver.mgrStopCh); err != nil {
 		return errors.WithMessage(err, "")
 	}
-
-	<-receiver.mgrStopCh
 
 	return nil
 }
 
 func (receiver *ControllerEngine) Stop() error {
-	if len(receiver.mgrStopCh) > 0 {
-		receiver.mgrStopCh <- struct{}{}
-	}
+	log.Infoln("Stopping controller engine")
+
+	receiver.mgrStopCh <- struct{}{}
 
 	return nil
 }
@@ -102,19 +103,6 @@ func (receiver *ControllerEngine) CreateController(
 			if err != nil {
 				return err
 			}
-		}
-	}
-
-	if receiver.mgrStopCh != nil {
-		receiver.mgrMtx.Lock()
-		defer receiver.mgrMtx.Unlock()
-
-		if err := receiver.Stop(); err != nil {
-			return err
-		}
-
-		if err := receiver.Start(); err != nil {
-			return err
 		}
 	}
 

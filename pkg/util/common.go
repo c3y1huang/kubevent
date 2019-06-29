@@ -1,6 +1,7 @@
 package util
 
 import (
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,6 +13,8 @@ func RegisterShutdownHook(callback func()) {
 
 	go func() {
 		<-stopCh
+
+		log.Infof("Receiving shutdown hook")
 		callback()
 	}()
 }

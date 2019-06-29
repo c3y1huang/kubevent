@@ -10,7 +10,9 @@ import (
 )
 
 type AmqpEventHandler struct {
+	BaseHandler
 	engine.ControllerEngineAwareType
+
 	broker broker.Operation
 }
 
@@ -38,18 +40,26 @@ func (receiver *AmqpEventHandler) Stop() error {
 	return nil
 }
 
-func (receiver *AmqpEventHandler) Create(event event.CreateEvent, _ workqueue.RateLimitingInterface) {
-	sendEvent(receiver.broker, event)
+func (receiver *AmqpEventHandler) Create(event event.CreateEvent, queue workqueue.RateLimitingInterface) {
+	if err := sendEvent(receiver.broker, event); err != nil {
+		receiver.EnqueueRequestForObject.Create(event, queue)
+	}
 }
 
-func (receiver *AmqpEventHandler) Update(event event.UpdateEvent, _ workqueue.RateLimitingInterface) {
-	sendEvent(receiver.broker, event)
+func (receiver *AmqpEventHandler) Update(event event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+	if err := sendEvent(receiver.broker, event); err != nil {
+		receiver.EnqueueRequestForObject.Update(event, queue)
+	}
 }
 
-func (receiver *AmqpEventHandler) Delete(event event.DeleteEvent, _ workqueue.RateLimitingInterface) {
-	sendEvent(receiver.broker, event)
+func (receiver *AmqpEventHandler) Delete(event event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+	if err := sendEvent(receiver.broker, event); err != nil {
+		receiver.EnqueueRequestForObject.Delete(event, queue)
+	}
 }
 
-func (receiver *AmqpEventHandler) Generic(event event.GenericEvent, _ workqueue.RateLimitingInterface) {
-	sendEvent(receiver.broker, event)
+func (receiver *AmqpEventHandler) Generic(event event.GenericEvent, queue workqueue.RateLimitingInterface) {
+	if err := sendEvent(receiver.broker, event); err != nil {
+		receiver.EnqueueRequestForObject.Generic(event, queue)
+	}
 }
