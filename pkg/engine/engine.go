@@ -62,7 +62,9 @@ func (receiver *ControllerEngine) Start() error {
 }
 
 func (receiver *ControllerEngine) Stop() error {
-	receiver.mgrStopCh <- struct{}{}
+	if len(receiver.mgrStopCh) > 0 {
+		receiver.mgrStopCh <- struct{}{}
+	}
 
 	return nil
 }

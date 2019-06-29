@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/innobead/kubevent/internal/config"
 	"github.com/innobead/kubevent/pkg/broker"
+	er "github.com/innobead/kubevent/pkg/error"
 	"github.com/streadway/amqp"
 )
 
@@ -42,7 +43,15 @@ func (receiver *AmqpBroker) Stop() error {
 	return nil
 }
 
+func (receiver *AmqpBroker) IsInitialized() bool {
+	return receiver.conn != nil
+}
+
 func (receiver *AmqpBroker) Send(msg interface{}) error {
+	if !receiver.IsInitialized() {
+		return er.NotInitialized
+	}
+
 	ch, err := receiver.conn.Channel()
 	if err != nil {
 		return err

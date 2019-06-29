@@ -22,6 +22,22 @@ func NewAmqpEventHandler(cfg config.AmqpSink) *AmqpEventHandler {
 	return &handler
 }
 
+func (receiver *AmqpEventHandler) Start() error {
+	if err := receiver.broker.Start(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (receiver *AmqpEventHandler) Stop() error {
+	if err := receiver.broker.Stop(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (receiver *AmqpEventHandler) Create(event event.CreateEvent, _ workqueue.RateLimitingInterface) {
 	sendEvent(receiver.broker, event)
 }
