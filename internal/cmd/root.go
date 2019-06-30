@@ -107,14 +107,29 @@ var rootCmd = &cobra.Command{
 		}
 
 		// Start event handler
-		for _, h := range eventHandlers {
-			if err := h.(handler.Operation).Start(); err != nil {
-				return err
+		go func() {
+			for {
+				for _, h := range eventHandlers {
+					op := h.(handler.Operation)
+
+					if err := op.Start(); err != nil {
+						log.Warnf("Failed to connect broker, %v", err)
+						_ = op.Stop()
+					}
+				}
+
+				time.Sleep(time.Second * time.Duration(cfg.ReconnectPeriod))
 			}
-		}
+
+		}()
+
 		defer func() {
 			for _, h := range eventHandlers {
-				_ = h.(handler.Operation).Stop()
+				op := h.(handler.Operation)
+
+				if err := op.Stop(); err != nil {
+					log.Warnf("Failed to disconnect broker, %v", err)
+				}
 			}
 		}()
 

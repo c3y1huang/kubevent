@@ -38,6 +38,10 @@ func (receiver *Amqp) Stop() error {
 	return nil
 }
 
+func (receiver *Amqp) IsInitialized() bool {
+	return receiver.IsInitialized()
+}
+
 func (receiver *Amqp) Create(event event.CreateEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Create(event, queue)

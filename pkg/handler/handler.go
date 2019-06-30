@@ -43,10 +43,10 @@ func sendEvent(broker broker.Operation, e interface{}) error {
 	})
 
 	if err := broker.Send(e); err != nil {
-		log.Error("Failed to send msg")
+		log.Errorf("Failed to send event, %v", err)
 		return err
 	} else {
-		log.Debug("Sending msg")
+		log.Debug("Sending event")
 	}
 
 	return nil

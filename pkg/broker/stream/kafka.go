@@ -6,11 +6,13 @@ import (
 	"github.com/innobead/kubevent/internal/config"
 	"github.com/innobead/kubevent/pkg/broker"
 	"github.com/innobead/kubevent/pkg/util"
+	"sync"
 )
 
 type KafkaBroker struct {
 	config.KafkaBroker
 	producer sarama.SyncProducer
+	mtx      sync.Mutex
 }
 
 func NewKafkaBroker(cfg config.KafkaBroker) broker.Operation {
@@ -20,6 +22,9 @@ func NewKafkaBroker(cfg config.KafkaBroker) broker.Operation {
 }
 
 func (receiver *KafkaBroker) Start() error {
+	receiver.mtx.Lock()
+	defer receiver.mtx.Unlock()
+
 	if receiver.producer != nil {
 		return nil
 	}
@@ -45,11 +50,16 @@ func (receiver *KafkaBroker) Start() error {
 }
 
 func (receiver *KafkaBroker) Stop() error {
+	receiver.mtx.Lock()
+	defer receiver.mtx.Unlock()
+
 	if receiver.producer == nil {
 		return nil
 	}
 
 	_ = receiver.producer.Close()
+	receiver.producer = nil
+
 	return nil
 }
 

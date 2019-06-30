@@ -7,11 +7,13 @@ import (
 	er "github.com/innobead/kubevent/pkg/error"
 	"github.com/innobead/kubevent/pkg/util"
 	"github.com/streadway/amqp"
+	"sync"
 )
 
 type AmqpBroker struct {
 	config.AmqpBroker
 	conn *amqp.Connection
+	mtx  sync.Mutex
 }
 
 func NewAmqpBroker(cfg config.AmqpBroker) broker.Operation {
@@ -21,6 +23,9 @@ func NewAmqpBroker(cfg config.AmqpBroker) broker.Operation {
 }
 
 func (receiver *AmqpBroker) Start() error {
+	receiver.mtx.Lock()
+	defer receiver.mtx.Unlock()
+
 	if receiver.conn != nil {
 		return nil
 	}
@@ -48,13 +53,14 @@ func (receiver *AmqpBroker) Start() error {
 }
 
 func (receiver *AmqpBroker) Stop() error {
+	receiver.mtx.Lock()
+	defer receiver.mtx.Unlock()
+
 	if receiver.conn == nil {
 		return nil
 	}
 
-	if err := receiver.conn.Close(); err != nil {
-		return err
-	}
+	_ = receiver.conn.Close()
 	receiver.conn = nil
 
 	return nil
@@ -71,6 +77,10 @@ func (receiver *AmqpBroker) Send(msg interface{}) error {
 
 	ch, err := receiver.conn.Channel()
 	if err != nil {
+		if err == amqp.ErrClosed {
+			_ = receiver.Stop()
+		}
+
 		return err
 	}
 	defer ch.Close()
@@ -99,6 +109,8 @@ func (receiver *AmqpBroker) Send(msg interface{}) error {
 			ContentType: "application/json",
 			Body:        []byte(body),
 		})
+
+	// Exception (504) Reason: \"channel/connection is not open\
 
 	return err
 }

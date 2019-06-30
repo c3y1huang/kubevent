@@ -10,6 +10,11 @@ services:
     ports:
       - "15672:15672"
       - "5672:5672"
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+
+volumes:
+  rabbitmq:
 
 #  kafka:
 #    image: "wurstmeister/kafka:2.12-2.3.0"

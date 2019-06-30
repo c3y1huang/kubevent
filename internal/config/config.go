@@ -14,10 +14,11 @@ var (
 )
 
 type Config struct {
-	Log       Log
-	Offset    Offset
-	Resources []EventResource
-	Brokers   []Broker
+	Log             Log
+	Offset          Offset
+	ReconnectPeriod int
+	Resources       []EventResource
+	Brokers         []Broker
 }
 
 type Log struct {
@@ -74,6 +75,8 @@ func init() {
 	viper.SetConfigName(configName)
 
 	defaultConfigFile = filepath.Join(configPath, configName) + "." + configType
+
+	viper.SetDefault("ReconnectPeriod", 5)
 }
 
 func DefaultConfigFile() string {
