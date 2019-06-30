@@ -28,3 +28,18 @@ brokers:
     value:
       uri: "amqp://rabbitmq:rabbitmq@localhost:5672/"
       exchange: kubevent
+#      tls:
+#        InsecureSkipVerify: true
+#        CaCert: ""
+#        Cert: ""
+#        Key: ""
+
+  - type: kafka
+    value:
+      server: "localhost:9092" # separate by ,
+      topic: "kubevent"
+#      tls:
+#        InsecureSkipVerify: true
+#        CaCert: ""
+#        Cert: ""
+#        Key: ""
