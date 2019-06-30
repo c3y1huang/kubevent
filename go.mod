@@ -3,6 +3,7 @@ module github.com/innobead/kubevent
 go 1.12
 
 require (
+	github.com/Shopify/sarama v1.22.1
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
@@ -25,7 +26,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45 // indirect
 	golang.org/x/sys v0.0.0-20190616124812-15dcb6c0061f // indirect
 	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20190311212946-11955173bddd
 	google.golang.org/appengine v1.5.0 // indirect
 	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
 	k8s.io/apiextensions-apiserver v0.0.0-20190409022649-727a075fdec8
@@ -34,7 +34,7 @@ require (
 	k8s.io/klog v0.3.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20190603182131-db7b694dc208 // indirect
 	k8s.io/utils v0.0.0-20190607212802-c55fbcfc754a // indirect
-	sigs.k8s.io/controller-runtime v0.2.0-beta.1.0.20190628181139-28262f4974c4
+	sigs.k8s.io/controller-runtime v0.2.0-beta.1.0.20190628213729-da24e0fa23ff
 )
 
 replace github.com/appscode/jsonpatch => gomodules.xyz/jsonpatch/v2 v2.0.0

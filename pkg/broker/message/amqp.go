@@ -5,17 +5,18 @@ import (
 	"github.com/innobead/kubevent/internal/config"
 	"github.com/innobead/kubevent/pkg/broker"
 	er "github.com/innobead/kubevent/pkg/error"
+	"github.com/innobead/kubevent/pkg/util"
 	"github.com/streadway/amqp"
 )
 
 type AmqpBroker struct {
-	config.AmqpSink
+	config.AmqpBroker
 	conn *amqp.Connection
 }
 
-func NewAmqpBroker(sink config.AmqpSink) broker.Operation {
+func NewAmqpBroker(cfg config.AmqpBroker) broker.Operation {
 	return &AmqpBroker{
-		AmqpSink: sink,
+		AmqpBroker: cfg,
 	}
 }
 
@@ -26,6 +27,18 @@ func (receiver *AmqpBroker) Start() error {
 
 	var err error
 
+	if tlsConfig, _ := util.CreateTLSConfig(receiver.Tls); tlsConfig != nil {
+		receiver.conn, err = amqp.DialTLS(
+			receiver.Uri,
+			tlsConfig,
+		)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	}
+
 	receiver.conn, err = amqp.Dial(receiver.Uri)
 	if err != nil {
 		return err
@@ -35,6 +48,10 @@ func (receiver *AmqpBroker) Start() error {
 }
 
 func (receiver *AmqpBroker) Stop() error {
+	if receiver.conn == nil {
+		return nil
+	}
+
 	if err := receiver.conn.Close(); err != nil {
 		return err
 	}

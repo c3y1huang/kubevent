@@ -2,7 +2,7 @@
 
 # Kubevent
 
-Publish K8s events of builtin or custom resource objects (CRD) from K8s clusters to external event brokers.
+Publish K8s events of builtin resource objects from K8s clusters to external event brokers.
 
 ## Goals
 
@@ -36,7 +36,7 @@ Publish K8s events of builtin or custom resource objects (CRD) from K8s clusters
 ## Supported Items
 
 ### Resource
-Builtin K8s API resource or CRD.
+Builtin K8s API resource.
 
 ### Event
 

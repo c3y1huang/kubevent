@@ -63,10 +63,10 @@ var rootCmd = &cobra.Command{
 		}).([]string)
 
 		var eventHandlers []controllerruntime.EventHandler
-		for _, s := range cfg.Sinks {
+		for _, s := range cfg.Brokers {
 			switch s.Type {
 			case "amqp":
-				result := config.AmqpSink{}
+				result := config.AmqpBroker{}
 				if err := mapstructure.Decode(s.Value, &result); err != nil {
 					log.Errorf("")
 				}

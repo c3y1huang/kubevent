@@ -23,7 +23,7 @@ resources:
   - kind: ingress
   - kind: storageclass
 
-sinks:
+brokers:
   - type: amqp
     value:
       uri: "amqp://guest:guest@localhost:5672/"

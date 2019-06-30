@@ -13,7 +13,7 @@ func NewDummy() reconcile.Reconciler {
 }
 
 func (*DummyReconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	log.WithField("request", req).Info("Reconciling") // TODO change to Debug
+	log.WithField("request", req).Debug("Reconciling")
 
 	return reconcile.Result{}, nil
 }

@@ -44,5 +44,9 @@ extensions.getByType(GoPluginExtension::class).apply {
         build("github.com/thoas/go-funk@v0.4.0")
         build("github.com/spf13/viper@v1.4.0")
         build("github.com/mitchellh/mapstructure@v1.1.2")
+        build("github.com/Shopify/sarama@v1.22.1")
+        build("github.com/eclipse/paho.mqtt.golang@v1.2.0")
+        build("github.com/go-stomp/stomp@v2.0.3")
+        build("github.com/nats-io/nats.go/@v1.8.1")
     }
 }

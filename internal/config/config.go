@@ -17,7 +17,7 @@ type Config struct {
 	Log       Log
 	Offset    Offset
 	Resources []EventResource
-	Sinks     []Sink
+	Brokers   []Broker
 }
 
 type Log struct {
@@ -28,20 +28,34 @@ type Offset struct {
 	Time string
 }
 
+type TLS struct {
+	InsecureSkipVerify bool
+	CaCert             string
+	Cert               string
+	Key                string
+}
+
 type EventResource struct {
 	Group   string
 	Version string
 	Kind    string
 }
 
-type Sink struct {
+type Broker struct {
 	Type  string // amqp
 	Value interface{}
 }
 
-type AmqpSink struct {
+type AmqpBroker struct {
 	Uri      string
 	Exchange string
+	Tls      TLS
+}
+
+type KafkaBroker struct {
+	Servers []string
+	Topic   string
+	Tls     TLS
 }
 
 var defaultConfigFile string

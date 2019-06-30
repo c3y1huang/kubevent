@@ -12,7 +12,8 @@ RUN apk update && \
 # Runtime
 FROM alpine:3.10
 
-RUN apk add --update ca-certificates
+RUN apk update && \
+    apk add ca-certificates
 
 COPY --from=builder kubevent /bin/kubevent
 COPY --from=builder configs /$HOME/.kubevent

@@ -16,12 +16,10 @@ type Amqp struct {
 	broker broker.Operation
 }
 
-func NewAmqp(cfg config.AmqpSink) *Amqp {
-	handler := Amqp{
-		broker: &message.AmqpBroker{AmqpSink: cfg},
+func NewAmqp(cfg config.AmqpBroker) *Amqp {
+	return &Amqp{
+		broker: message.NewAmqpBroker(cfg),
 	}
-
-	return &handler
 }
 
 func (receiver *Amqp) Start() error {
