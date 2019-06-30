@@ -6,7 +6,16 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: "rabbitmq"
       RABBITMQ_DEFAULT_PASS: "rabbitmq"
-    expose:
+    network_mode: host
+    ports:
       - "15672:15672"
       - "5672:5672"
 
+#  kafka:
+#    image: "wurstmeister/kafka:2.12-2.3.0"
+#    environment:
+#      KAFKA_ADVERTISED_HOST_NAME: "127.0.0.1"
+#      KAFKA_CREATE_TOPICS: "kubevent:1:1:compact"
+#    network_mode: host
+#    ports:
+#      - "9092:9092"

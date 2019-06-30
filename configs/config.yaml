@@ -2,7 +2,7 @@ log:
   level: info
 
 offset:
-  time: "" #  "" means now or RFC3339 format = "2006-01-02T15:04:05Z07:00"
+  time: "" #  "" means now or RFC3339 format = "2006-01-02T15:04:05Z"
 
 resources:
   - kind: pod
@@ -26,5 +26,5 @@ resources:
 brokers:
   - type: amqp
     value:
-      uri: "amqp://guest:guest@localhost:5672/"
+      uri: "amqp://rabbitmq:rabbitmq@localhost:5672/"
       exchange: kubevent

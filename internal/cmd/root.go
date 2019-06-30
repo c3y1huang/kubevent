@@ -51,6 +51,7 @@ var rootCmd = &cobra.Command{
 
 		cfg := config.Get()
 
+		// Setup app config
 		if level, err := log.ParseLevel(cfg.Log.Level); err != nil {
 			log.WithField("level", cfg.Log.Level).Warnf("Invalid log level, use %s instead", log.InfoLevel)
 			log.SetLevel(log.InfoLevel)
@@ -58,22 +59,33 @@ var rootCmd = &cobra.Command{
 			log.SetLevel(level)
 		}
 
+		// Prepare watched resources
 		watchedApiTypes := funk.Map(cfg.Resources, func(r config.EventResource) string {
 			return r.Kind
 		}).([]string)
 
+		// Prepare event handler
 		var eventHandlers []controllerruntime.EventHandler
 		for _, s := range cfg.Brokers {
 			switch s.Type {
 			case "amqp":
-				result := config.AmqpBroker{}
-				if err := mapstructure.Decode(s.Value, &result); err != nil {
+				broker := config.AmqpBroker{}
+				if err := mapstructure.Decode(s.Value, &broker); err != nil {
 					log.Errorf("")
 				}
-				eventHandlers = append(eventHandlers, handler.NewAmqp(result))
+				eventHandlers = append(eventHandlers, handler.NewAmqp(broker))
+
+			case "kafka":
+				broker := config.KafkaBroker{}
+				if err := mapstructure.Decode(s.Value, &broker); err != nil {
+					log.Errorf("")
+				}
+				eventHandlers = append(eventHandlers, handler.NewKafka(broker))
+
 			}
 		}
 
+		// Prepare offset events start to receive
 		var predictTime time.Time
 		if t, err := cfg.Offset.ParsedTime(); err != nil {
 			predictTime = time.Now()
@@ -82,6 +94,7 @@ var rootCmd = &cobra.Command{
 			predictTime = t
 		}
 
+		// Create controller
 		err = eng.CreateController(
 			"kubevent",
 			watchedApiTypes,
@@ -93,6 +106,19 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
+		// Start event handler
+		for _, h := range eventHandlers {
+			if err := h.(handler.Operation).Start(); err != nil {
+				return err
+			}
+		}
+		defer func() {
+			for _, h := range eventHandlers {
+				_ = h.(handler.Operation).Stop()
+			}
+		}()
+
+		// Start controller engine
 		if err := eng.Start(); err != nil {
 			return err
 		}

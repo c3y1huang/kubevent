@@ -15,7 +15,6 @@ type Operation interface {
 }
 
 type Base struct {
-	handler.EventHandler
 	handler.EnqueueRequestForObject
 }
 
@@ -38,13 +37,16 @@ func sendEvent(broker broker.Operation, e interface{}) error {
 		objName = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
 	}
 
-	if err := broker.Send(e); err != nil {
-		log.WithFields(log.Fields{
-			"type": eventType,
-			"name": objName,
-		}).Error("Failed to send msg")
+	log := log.WithFields(log.Fields{
+		"type": eventType,
+		"name": objName,
+	})
 
+	if err := broker.Send(e); err != nil {
+		log.Error("Failed to send msg")
 		return err
+	} else {
+		log.Debug("Sending msg")
 	}
 
 	return nil
