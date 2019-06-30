@@ -1,7 +1,27 @@
+log:
+  level: info
+
+offset:
+  time: "" #  "" means now or RFC3339 format = "2006-01-02T15:04:05Z07:00"
+
 resources:
-  - group: core
-    version: v1
-    kind: pod
+  - kind: pod
+  - kind: replicationcontroller
+  - kind: service
+  - kind: namespace
+  - kind: persistentvolume
+  - kind: persistentvolumeclaim
+  - kind: secret
+  - kind: configmap
+  - kind: endpoints
+  - kind: daemonset
+  - kind: statefulset
+  - kind: replicaset
+  - kind: deployment
+  - kind: job
+  - kind: cronjob
+  - kind: ingress
+  - kind: storageclass
 
 sinks:
   - type: amqp

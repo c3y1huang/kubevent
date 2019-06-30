@@ -8,6 +8,10 @@ import (
 type DummyReconciler struct {
 }
 
+func NewDummy() reconcile.Reconciler {
+	return &DummyReconciler{}
+}
+
 func (*DummyReconciler) Reconcile(req reconcile.Request) (reconcile.Result, error) {
 	log.WithField("request", req).Info("Reconciling") // TODO change to Debug
 

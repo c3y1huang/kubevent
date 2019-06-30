@@ -9,22 +9,22 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type AmqpEventHandler struct {
-	BaseHandler
+type Amqp struct {
+	Base
 	engine.ControllerEngineAwareType
 
 	broker broker.Operation
 }
 
-func NewAmqpEventHandler(cfg config.AmqpSink) *AmqpEventHandler {
-	handler := AmqpEventHandler{
+func NewAmqp(cfg config.AmqpSink) *Amqp {
+	handler := Amqp{
 		broker: &message.AmqpBroker{AmqpSink: cfg},
 	}
 
 	return &handler
 }
 
-func (receiver *AmqpEventHandler) Start() error {
+func (receiver *Amqp) Start() error {
 	if err := receiver.broker.Start(); err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (receiver *AmqpEventHandler) Start() error {
 	return nil
 }
 
-func (receiver *AmqpEventHandler) Stop() error {
+func (receiver *Amqp) Stop() error {
 	if err := receiver.broker.Stop(); err != nil {
 		return err
 	}
@@ -40,25 +40,25 @@ func (receiver *AmqpEventHandler) Stop() error {
 	return nil
 }
 
-func (receiver *AmqpEventHandler) Create(event event.CreateEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *Amqp) Create(event event.CreateEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Create(event, queue)
 	}
 }
 
-func (receiver *AmqpEventHandler) Update(event event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *Amqp) Update(event event.UpdateEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Update(event, queue)
 	}
 }
 
-func (receiver *AmqpEventHandler) Delete(event event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *Amqp) Delete(event event.DeleteEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Delete(event, queue)
 	}
 }
 
-func (receiver *AmqpEventHandler) Generic(event event.GenericEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *Amqp) Generic(event event.GenericEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Generic(event, queue)
 	}

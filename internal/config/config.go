@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 var (
@@ -13,8 +14,18 @@ var (
 )
 
 type Config struct {
+	Log       Log
+	Offset    Offset
 	Resources []EventResource
 	Sinks     []Sink
+}
+
+type Log struct {
+	Level string
+}
+
+type Offset struct {
+	Time string
 }
 
 type EventResource struct {
@@ -81,4 +92,8 @@ func Init(cfgFile string) (*Config, error) {
 
 func Get() *Config {
 	return &cfg
+}
+
+func (receiver *Offset) ParsedTime() (time.Time, error) {
+	return time.Parse(time.RFC3339, receiver.Time)
 }
