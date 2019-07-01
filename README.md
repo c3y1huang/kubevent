@@ -24,9 +24,9 @@ Publish K8s events of builtin resource objects from K8s clusters to external eve
 
 **Kubevent Controller** is responsible for watching user registered resource events, managing **Kubevent Event Publisher** to serve publishing events with resource data to external connected event brokers.
 
-### Kubevent Configs
+### Kubevent Config
 
-**Kubevent Configs** configure registered events and event brokers to adopt in Kubevent controller.
+**Kubevent Config** configure registered events and event brokers to adopt in Kubevent controller.
 
 ### Kubevent Event Handler
 
