@@ -1,10 +1,9 @@
-package stream
+package broker
 
 import (
 	"encoding/json"
 	"github.com/Shopify/sarama"
 	"github.com/innobead/kubevent/internal/config"
-	"github.com/innobead/kubevent/pkg/broker"
 	"github.com/innobead/kubevent/pkg/util"
 	"sync"
 )
@@ -15,7 +14,7 @@ type KafkaBroker struct {
 	mtx      sync.Mutex
 }
 
-func NewKafkaBroker(cfg config.KafkaBroker) broker.Operation {
+func NewKafkaBroker(cfg config.KafkaBroker) BrokerOperation {
 	return &KafkaBroker{
 		KafkaBroker: cfg,
 	}

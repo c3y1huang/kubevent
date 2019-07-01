@@ -73,14 +73,14 @@ var rootCmd = &cobra.Command{
 				if err := mapstructure.Decode(s.Value, &broker); err != nil {
 					log.Errorf("")
 				}
-				eventHandlers = append(eventHandlers, handler.NewAmqp(broker))
+				eventHandlers = append(eventHandlers, handler.NewAmqpHandler(broker))
 
 			case "kafka":
 				broker := config.KafkaBroker{}
 				if err := mapstructure.Decode(s.Value, &broker); err != nil {
 					log.Errorf("")
 				}
-				eventHandlers = append(eventHandlers, handler.NewKafka(broker))
+				eventHandlers = append(eventHandlers, handler.NewKafkaHandler(broker))
 
 			}
 		}
@@ -99,7 +99,7 @@ var rootCmd = &cobra.Command{
 			"kubevent",
 			watchedApiTypes,
 			eventHandlers,
-			predicater.NewTime(predictTime),
+			predicater.NewTimePredicater(predictTime),
 			reconciler.NewDummy(),
 		)
 		if err != nil {
@@ -110,7 +110,7 @@ var rootCmd = &cobra.Command{
 		go func() {
 			for {
 				for _, h := range eventHandlers {
-					op := h.(handler.Operation)
+					op := h.(handler.HandlerOperation)
 
 					if err := op.Start(); err != nil {
 						log.Warnf("Failed to connect broker, %v", err)
@@ -125,7 +125,7 @@ var rootCmd = &cobra.Command{
 
 		defer func() {
 			for _, h := range eventHandlers {
-				op := h.(handler.Operation)
+				op := h.(handler.HandlerOperation)
 
 				if err := op.Stop(); err != nil {
 					log.Warnf("Failed to disconnect broker, %v", err)

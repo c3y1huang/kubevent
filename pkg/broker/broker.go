@@ -1,6 +1,6 @@
 package broker
 
-type Operation interface {
+type BrokerOperation interface {
 	Start() error
 	Stop() error
 	IsInitialized() bool

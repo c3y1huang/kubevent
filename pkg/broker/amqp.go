@@ -1,9 +1,8 @@
-package message
+package broker
 
 import (
 	"encoding/json"
 	"github.com/innobead/kubevent/internal/config"
-	"github.com/innobead/kubevent/pkg/broker"
 	er "github.com/innobead/kubevent/pkg/error"
 	"github.com/innobead/kubevent/pkg/util"
 	"github.com/streadway/amqp"
@@ -16,7 +15,7 @@ type AmqpBroker struct {
 	mtx  sync.Mutex
 }
 
-func NewAmqpBroker(cfg config.AmqpBroker) broker.Operation {
+func NewAmqpBroker(cfg config.AmqpBroker) BrokerOperation {
 	return &AmqpBroker{
 		AmqpBroker: cfg,
 	}

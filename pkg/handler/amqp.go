@@ -3,26 +3,25 @@ package handler
 import (
 	"github.com/innobead/kubevent/internal/config"
 	"github.com/innobead/kubevent/pkg/broker"
-	"github.com/innobead/kubevent/pkg/broker/message"
 	"github.com/innobead/kubevent/pkg/engine"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
-type Amqp struct {
-	Base
+type AmqpHandler struct {
+	BaseHandler
 	engine.ControllerEngineAwareType
 
-	broker broker.Operation
+	broker broker.BrokerOperation
 }
 
-func NewAmqp(cfg config.AmqpBroker) *Amqp {
-	return &Amqp{
-		broker: message.NewAmqpBroker(cfg),
+func NewAmqpHandler(cfg config.AmqpBroker) *AmqpHandler {
+	return &AmqpHandler{
+		broker: broker.NewAmqpBroker(cfg),
 	}
 }
 
-func (receiver *Amqp) Start() error {
+func (receiver *AmqpHandler) Start() error {
 	if err := receiver.broker.Start(); err != nil {
 		return err
 	}
@@ -30,7 +29,7 @@ func (receiver *Amqp) Start() error {
 	return nil
 }
 
-func (receiver *Amqp) Stop() error {
+func (receiver *AmqpHandler) Stop() error {
 	if err := receiver.broker.Stop(); err != nil {
 		return err
 	}
@@ -38,29 +37,29 @@ func (receiver *Amqp) Stop() error {
 	return nil
 }
 
-func (receiver *Amqp) IsInitialized() bool {
+func (receiver *AmqpHandler) IsInitialized() bool {
 	return receiver.IsInitialized()
 }
 
-func (receiver *Amqp) Create(event event.CreateEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *AmqpHandler) Create(event event.CreateEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Create(event, queue)
 	}
 }
 
-func (receiver *Amqp) Update(event event.UpdateEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *AmqpHandler) Update(event event.UpdateEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Update(event, queue)
 	}
 }
 
-func (receiver *Amqp) Delete(event event.DeleteEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *AmqpHandler) Delete(event event.DeleteEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Delete(event, queue)
 	}
 }
 
-func (receiver *Amqp) Generic(event event.GenericEvent, queue workqueue.RateLimitingInterface) {
+func (receiver *AmqpHandler) Generic(event event.GenericEvent, queue workqueue.RateLimitingInterface) {
 	if err := sendEvent(receiver.broker, event); err != nil {
 		receiver.EnqueueRequestForObject.Generic(event, queue)
 	}
