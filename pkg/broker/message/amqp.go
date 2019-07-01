@@ -110,7 +110,5 @@ func (receiver *AmqpBroker) Send(msg interface{}) error {
 			Body:        []byte(body),
 		})
 
-	// Exception (504) Reason: \"channel/connection is not open\
-
 	return err
 }
