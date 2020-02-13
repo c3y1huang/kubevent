@@ -2,97 +2,104 @@ package broker
 
 import (
 	"encoding/json"
-	"github.com/innobead/kubevent/internal/config"
-	er "github.com/innobead/kubevent/pkg/error"
+	"github.com/innobead/kubevent/api/v1alpha1"
 	"github.com/innobead/kubevent/pkg/util"
+	"github.com/sirupsen/logrus"
 	"github.com/streadway/amqp"
 	"sync"
 )
 
-type AmqpBroker struct {
-	config.AmqpBroker
+type AMQPBroker struct {
+	*v1alpha1.AMQPBroker
+
 	conn *amqp.Connection
 	mtx  sync.Mutex
 }
 
-func NewAmqpBroker(cfg config.AmqpBroker) BrokerOperation {
-	return &AmqpBroker{
-		AmqpBroker: cfg,
+func NewAMQPBroker(broker *v1alpha1.AMQPBroker) *AMQPBroker {
+	return &AMQPBroker{
+		AMQPBroker: broker,
+		mtx:        sync.Mutex{},
 	}
 }
 
-func (receiver *AmqpBroker) Start() error {
-	receiver.mtx.Lock()
-	defer receiver.mtx.Unlock()
+func (a *AMQPBroker) Start() error {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
 
-	if receiver.conn != nil {
+	if a.conn != nil {
 		return nil
 	}
 
-	var err error
-
-	if tlsConfig, _ := util.CreateTLSConfig(receiver.Tls); tlsConfig != nil {
-		receiver.conn, err = amqp.DialTLS(
-			receiver.Uri,
-			tlsConfig,
-		)
-		if err != nil {
+	if a.TlsConfig == nil {
+		if conn, err := amqp.Dial(a.Addresses[0]); err != nil {
 			return err
+		} else {
+			a.conn = conn
 		}
 
 		return nil
 	}
 
-	receiver.conn, err = amqp.Dial(receiver.Uri)
-	if err != nil {
-		return err
+	if cfg, err := util.CreateTLSConfig(a.TlsConfig); err != nil {
+		if conn, err := amqp.DialTLS(
+			a.Addresses[0],
+			cfg,
+		); err != nil {
+			return err
+		} else {
+			a.conn = conn
+		}
 	}
 
 	return nil
 }
 
-func (receiver *AmqpBroker) Stop() error {
-	receiver.mtx.Lock()
-	defer receiver.mtx.Unlock()
+func (a *AMQPBroker) Stop() error {
+	a.mtx.Lock()
+	defer a.mtx.Unlock()
 
-	if receiver.conn == nil {
+	if a.conn == nil {
 		return nil
 	}
 
-	_ = receiver.conn.Close()
-	receiver.conn = nil
+	if err := a.conn.Close(); err != nil {
+		logrus.WithError(err).Errorln("failed to close AMQP broker channel")
+		return err
+	}
+
+	a.conn = nil
 
 	return nil
 }
 
-func (receiver *AmqpBroker) IsInitialized() bool {
-	return receiver.conn != nil
-}
-
-func (receiver *AmqpBroker) Send(msg interface{}) error {
-	if !receiver.IsInitialized() {
-		return er.NotInitialized
-	}
-
-	ch, err := receiver.conn.Channel()
+func (a *AMQPBroker) Send(msg interface{}) error {
+	ch, err := a.conn.Channel()
 	if err != nil {
 		if err == amqp.ErrClosed {
-			_ = receiver.Stop()
+			_ = a.Stop()
 		}
 
 		return err
 	}
-	defer ch.Close()
+	defer func() {
+		err := ch.Close()
+		if err != nil {
+			logrus.WithError(err).Errorln("failed to close AMQP broker channel")
+		}
+	}()
 
-	err = ch.ExchangeDeclare(
-		receiver.Exchange,
+	if err := ch.ExchangeDeclare(
+		a.Exchange,
 		"fanout",
 		true,
 		false,
 		false,
 		false,
 		nil,
-	)
+	); err != nil {
+		return err
+	}
 
 	body, err := json.Marshal(msg)
 	if err != nil {
@@ -100,14 +107,18 @@ func (receiver *AmqpBroker) Send(msg interface{}) error {
 	}
 
 	err = ch.Publish(
-		receiver.Exchange,
+		a.Exchange,
 		"",
 		false,
 		false,
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        []byte(body),
-		})
+		},
+	)
+	if err != nil {
+		return err
+	}
 
 	return err
 }

@@ -1,3 +1,4 @@
-.gradle
-.gogradle
 .idea
+cover.out
+*.iml
+bin

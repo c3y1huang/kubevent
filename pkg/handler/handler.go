@@ -9,16 +9,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
-type HandlerOperation interface {
+type Operation interface {
 	Start() error
 	Stop() error
 }
 
 type BaseHandler struct {
+	handler.EventHandler
 	handler.EnqueueRequestForObject
 }
 
-func sendEvent(broker broker.BrokerOperation, e interface{}) error {
+func sendEvent(broker broker.Operation, e interface{}) error {
 	eventType := reflect.TypeOf(e).Name()
 
 	var objName interface{}

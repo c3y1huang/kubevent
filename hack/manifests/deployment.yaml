@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubevent
+spec:
+  selector:
+    matchLabels:
+      app: kubevent
+  template:
+    metadata:
+      labels:
+        app: kubevent
+    spec:
+      containers:
+        - name: kubevent
+          image: kubevent
+          imagePullPolicy: IfNotPresent

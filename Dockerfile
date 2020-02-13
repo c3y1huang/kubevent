@@ -1,21 +1,18 @@
 # Buildtime
-FROM golang:alpine AS builder
+FROM golang:1.13 AS builder
 
-ADD . "$GOPATH/src/github.com/innobead/kubevent"
-WORKDIR "$GOPATH/src/github.com/innobead/kubevent"
+WORKDIR /workspace
+COPY . .
 
-RUN apk update && \
-    apk add git build-base && \
-    cd "$GOPATH/src/github.com/innobead/kubevent" && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/kubevent -o /kubevent
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 make
 
 # Runtime
-FROM alpine:3.10
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
 
-RUN apk update && \
-    apk add ca-certificates
+WORKDIR /
+COPY --from=builder /workspace/bin/kubevent .
+USER nonroot:nonroot
 
-COPY --from=builder kubevent /bin/kubevent
-COPY --from=builder configs /$HOME/.kubevent
-
-ENTRYPOINT ["/bin/kubevent"]
+ENTRYPOINT ["/kubevent"]

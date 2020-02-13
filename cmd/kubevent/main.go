@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/innobead/kubevent/internal/cmd"
-	log "github.com/sirupsen/logrus"
+	_ "github.com/innobead/kubevent/cmd/kubevent/version"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	if err := cmd.Execute(); err != nil {
-		log.Fatalf("%v", err)
+	if err := NewKubeventCmd().Execute(); err != nil {
+		logrus.WithError(err).Fatalln("Failed to start kubevent process")
 	}
 }

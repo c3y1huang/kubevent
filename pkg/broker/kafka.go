@@ -3,82 +3,90 @@ package broker
 import (
 	"encoding/json"
 	"github.com/Shopify/sarama"
-	"github.com/innobead/kubevent/internal/config"
+	"github.com/innobead/kubevent/api/v1alpha1"
 	"github.com/innobead/kubevent/pkg/util"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
 type KafkaBroker struct {
-	config.KafkaBroker
+	*v1alpha1.KafkaBroker
+
 	producer sarama.SyncProducer
 	mtx      sync.Mutex
 }
 
-func NewKafkaBroker(cfg config.KafkaBroker) BrokerOperation {
+func NewKafkaBroker(broker *v1alpha1.KafkaBroker) *KafkaBroker {
 	return &KafkaBroker{
-		KafkaBroker: cfg,
+		KafkaBroker: broker,
+		mtx:         sync.Mutex{},
 	}
 }
 
-func (receiver *KafkaBroker) Start() error {
-	receiver.mtx.Lock()
-	defer receiver.mtx.Unlock()
+func (k *KafkaBroker) Start() error {
+	k.mtx.Lock()
+	defer k.mtx.Unlock()
 
-	if receiver.producer != nil {
+	if k.producer != nil {
 		return nil
 	}
 
-	var err error
+	kafkaConfig := sarama.NewConfig()
+	kafkaConfig.Producer.RequiredAcks = sarama.WaitForAll
+	kafkaConfig.Producer.Retry.Max = 10
+	kafkaConfig.Producer.Return.Successes = true
 
-	cfg := sarama.NewConfig()
-	cfg.Producer.RequiredAcks = sarama.WaitForAll
-	cfg.Producer.Retry.Max = 10
-	cfg.Producer.Return.Successes = true
-
-	if tlsCfg, _ := util.CreateTLSConfig(receiver.Tls); tlsCfg != nil {
-		cfg.Net.TLS.Config = tlsCfg
-		cfg.Net.TLS.Enable = true
+	if cfg, _ := util.CreateTLSConfig(k.TlsConfig); cfg != nil {
+		kafkaConfig.Net.TLS.Config = cfg
+		kafkaConfig.Net.TLS.Enable = true
 	}
 
-	receiver.producer, err = sarama.NewSyncProducer(receiver.KafkaBroker.Servers, cfg)
-	if err != nil {
+	if p, err := sarama.NewSyncProducer(k.KafkaBroker.Addresses, kafkaConfig); err != nil {
+		return err
+	} else {
+		k.producer = p
+	}
+
+	return nil
+}
+
+func (k *KafkaBroker) Stop() error {
+	k.mtx.Lock()
+	defer k.mtx.Unlock()
+
+	if k.producer == nil {
+		return nil
+	}
+
+	if err := k.producer.Close(); err != nil {
 		return err
 	}
 
-	return nil
-}
-
-func (receiver *KafkaBroker) Stop() error {
-	receiver.mtx.Lock()
-	defer receiver.mtx.Unlock()
-
-	if receiver.producer == nil {
-		return nil
-	}
-
-	_ = receiver.producer.Close()
-	receiver.producer = nil
+	k.producer = nil
 
 	return nil
 }
 
-func (receiver *KafkaBroker) IsInitialized() bool {
-	return receiver.producer != nil
-}
-
-func (receiver *KafkaBroker) Send(msg interface{}) error {
+func (k *KafkaBroker) Send(msg interface{}) error {
 	body, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
-	_, _, err = receiver.producer.SendMessage(&sarama.ProducerMessage{
-		Topic: receiver.Topic,
+	part, offset, err := k.producer.SendMessage(&sarama.ProducerMessage{
+		Topic: k.Topic,
 		Value: sarama.StringEncoder(body),
 	})
 	if err != nil {
 		return err
 	}
+	logrus.WithFields(
+		logrus.Fields{
+			"partition": part,
+			"offset":    offset,
+			"message":   string(body),
+		},
+	).Debugln("message sent")
 
 	return nil
 }
