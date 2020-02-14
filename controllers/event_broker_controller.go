@@ -24,7 +24,9 @@ import (
 	"github.com/innobead/kubevent/pkg/source"
 	"github.com/innobead/kubevent/pkg/util"
 	"github.com/sirupsen/logrus"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	controllerruntimecontroller "sigs.k8s.io/controller-runtime/pkg/controller"
+	controllerruntimehandler "sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
 
@@ -35,27 +37,29 @@ import (
 	kubeventv1alpha1 "github.com/innobead/kubevent/api/v1alpha1"
 )
 
+var passReconciler = reconciler.NewPassReconciler()
+
 // EventBrokerController reconciles a EventBroker object
 type EventBrokerController struct {
 	client.Client
-	Scheme      *runtime.Scheme
-	Mgr         manager.Manager
-	controllers map[string]eventBrokerWatchController
+	Scheme           *runtime.Scheme
+	Mgr              manager.Manager
+	watchControllers map[string]eventBrokerWatchController
 }
 
 type eventBrokerWatchController struct {
-	stop                 chan struct{}
+	stop chan struct{}
+	// controller is runtime controller
 	controller           controllerruntimecontroller.Controller
 	eventBrokerOperation handler.Operation
-	A                    string
 }
 
 func NewEventBrokerController(manager manager.Manager) (*EventBrokerController, error) {
 	controller := &EventBrokerController{
-		Client:      manager.GetClient(),
-		Scheme:      manager.GetScheme(),
-		Mgr:         manager,
-		controllers: map[string]eventBrokerWatchController{},
+		Client:           manager.GetClient(),
+		Scheme:           manager.GetScheme(),
+		Mgr:              manager,
+		watchControllers: map[string]eventBrokerWatchController{},
 	}
 
 	err := controller.SetupWithManager(manager)
@@ -66,119 +70,122 @@ func NewEventBrokerController(manager manager.Manager) (*EventBrokerController, 
 // +kubebuilder:rbac:groups=kubevent.innobead,resources=eventbroker,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=kubevent.innobead,resources=eventbroker/status,verbs=get;update;patch
 
-func (r *EventBrokerController) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	logrus.WithField("request", req).Infoln("reconciling request")
+func (e *EventBrokerController) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	logger := logrus.WithField("request", req).Logger
+
+	logger.Infoln("reconciling request")
 
 	ctx := context.Background()
-	broker := &kubeventv1alpha1.EventBroker{}
+	eventBroker := &kubeventv1alpha1.EventBroker{}
 
 	// delete eventBrokerWatchController if not found
-	if err := r.Client.Get(ctx, req.NamespacedName, broker); err != nil {
-		//TODO delete controller if object not found
-		logrus.WithError(err).WithField("request", req).Errorln("failed to get object of event broker watch controller")
+	if err := e.Client.Get(ctx, req.NamespacedName, eventBroker); err != nil {
+		logger.WithError(err).Errorln("failed to get object of event broker watch controller")
 
-		r.deleteEventBrokerWatchController(broker)
+		e.deleteEventBrokerWatchController(logger, eventBroker)
 
 		return ctrl.Result{}, nil
 	}
 
 	// delete eventBrokerWatchController if found, then create a new one for update case
-	r.deleteEventBrokerWatchController(broker)
+	e.deleteEventBrokerWatchController(logger, eventBroker)
 
 	// create eventBrokerWatchController
-	logrus.WithField("req", req).Infoln("creating event broker watch controller")
+	logger.Infoln("creating event broker watch controller")
 
-	brokerName := getEventBrokerName(broker)
+	controllerName := getEventBrokerName(eventBroker)
+	controllerLogger := logger.WithField("controller", controllerName).Logger
 	controller, err := controllerruntimecontroller.New(
-		brokerName,
-		r.Mgr,
+		controllerName,
+		e.Mgr,
 		controllerruntimecontroller.Options{
 			MaxConcurrentReconciles: 1,
-			Reconciler:              reconciler.NewPassReconciler(),
+			Reconciler:              passReconciler,
 		},
 	)
 	if err != nil {
-		logrus.WithField("req", req).Errorln("failed to create event broker watch controller")
+		controllerLogger.Errorln("failed to create event broker watch controller")
 		return createErrorResult(), err
 	}
 
 	stopChan := make(chan struct{})
-	r.controllers[brokerName] = eventBrokerWatchController{
+	e.watchControllers[controllerName] = eventBrokerWatchController{
 		stop:       stopChan,
 		controller: controller,
 	}
 
 	go func() {
+		controllerLogger.Infoln("starting event broker watch controller")
+
 		if err := controller.Start(stopChan); err != nil {
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"req":    req,
-				"broker": brokerName,
-			}).Errorln("failed to start event broker watch controller")
+			controllerLogger.WithError(err).Warnln("failed to start event broker watch controller")
 		}
 	}()
 
-	logrus.WithFields(logrus.Fields{
-		"req":    req,
-		"broker": brokerName,
-	}).Infoln("watching event")
+	controllerLogger.Infoln("watching event")
 
-	if broker.Spec.Kafka != nil {
-		eventBrokerHandler := handler.NewKafkaHandler(broker.Spec.Kafka)
-		c := r.controllers[brokerName]
-		c.eventBrokerOperation = handler.Operation(eventBrokerHandler)
+	watchController := e.watchControllers[controllerName]
+	var eventBrokerHandler controllerruntimehandler.EventHandler
 
-		go func() {
-			if err := eventBrokerHandler.Start(); err != nil {
-				logrus.WithError(err).WithFields(logrus.Fields{
-					"req":    req,
-					"broker": brokerName,
-				}).Errorln("failed to start kafka event broker event handler")
-			}
-		}()
+	eventBrokerHandler, watchController.eventBrokerOperation, err = handler.CreateEventBrokerHandler(&eventBroker.Spec)
+	if err != nil {
+		controllerLogger.WithError(err).Errorln("failed to start kafka event eventBroker event handler")
+		return ctrl.Result{}, err
+	}
 
-		gvks := util.ToSchemaGroupVersionKinds(broker.Spec.GroupVersionKinds)
-		if err = controller.Watch(
-			&source.DynamicKinds{GroupVersionKinds: gvks, Cache: r.Mgr.GetCache()},
-			eventBrokerHandler,
-			predicater.NewTimePredicater(time.Now()),
-		); err != nil {
-			logrus.WithError(err).WithFields(logrus.Fields{
-				"name":   req.NamespacedName,
-				"broker": brokerName,
-			}).Errorln("failed to watch event")
-
-			return createErrorResult(), err
+	go func() {
+		if err := watchController.eventBrokerOperation.Start(); err != nil {
+			controllerLogger.WithError(err).Errorln("failed to start kafka event eventBroker event handler")
 		}
+	}()
+
+	var gvks []schema.GroupVersionKind
+	if eventBroker.Spec.WatchAllResources {
+		for k := range e.Scheme.AllKnownTypes() {
+			gvks = append(gvks, k)
+		}
+	} else {
+		gvks = append(gvks, util.ToSchemaGroupVersionKinds(eventBroker.Spec.WatchResources)...)
+	}
+
+	if err = controller.Watch(
+		&source.DynamicKinds{GroupVersionKinds: gvks, Cache: e.Mgr.GetCache()},
+		eventBrokerHandler,
+		predicater.NewTimePredicater(time.Now()),
+	); err != nil {
+		controllerLogger.WithError(err).Errorln("failed to watch event")
+
+		return createErrorResult(), err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *EventBrokerController) SetupWithManager(mgr ctrl.Manager) error {
+func (e *EventBrokerController) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&kubeventv1alpha1.EventBroker{}).
-		Complete(r)
+		Complete(e)
 }
 
-func (r *EventBrokerController) deleteEventBrokerWatchController(broker *kubeventv1alpha1.EventBroker) {
+func (e *EventBrokerController) deleteEventBrokerWatchController(logger *logrus.Logger, broker *kubeventv1alpha1.EventBroker) {
 	name := getEventBrokerName(broker)
 
-	logrus.WithField("name", name).Infoln("deleting event broker watch controller")
+	logger.Infoln("deleting event broker watch controller")
 
-	if controller, ok := r.controllers[name]; ok {
+	if controller, ok := e.watchControllers[name]; ok {
 		defer func() {
 			close(controller.stop)
 		}()
 
 		defer func() {
 			if err := controller.eventBrokerOperation.Stop(); err != nil {
-				logrus.WithError(err).WithField("name", name).Errorln("failed to stop kafka event broker event handler")
+				logger.WithError(err).Errorln("failed to stop kafka event broker event handler")
 			}
 		}()
 
 		controller.stop <- struct{}{}
 
-		delete(r.controllers, name)
+		delete(e.watchControllers, name)
 	}
 }
 

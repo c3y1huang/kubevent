@@ -27,10 +27,12 @@ type EventBrokerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Activate          bool                `json:"activate"`
-	Kafka             *KafkaBroker        `json:"kafka,omitempty"`
-	AMQP              *AMQPBroker         `json:"amqp,omitempty"`
-	GroupVersionKinds []*GroupVersionKind `json:"resources,omitempty"`
+	Activate bool         `json:"activate"`
+	Kafka    *KafkaBroker `json:"kafka,omitempty"`
+	AMQP     *AMQPBroker  `json:"amqp,omitempty"`
+
+	WatchAllResources bool                `json:"watch_all_resources,omitempty"`
+	WatchResources    []*GroupVersionKind `json:"watch_resources,omitempty"`
 }
 
 type GroupVersionKind struct {

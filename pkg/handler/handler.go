@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"github.com/innobead/kubevent/api/v1alpha1"
 	"github.com/innobead/kubevent/pkg/broker"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/types"
@@ -20,8 +22,6 @@ type EventHandler struct {
 }
 
 func sendEvent(broker broker.Operation, e interface{}) error {
-	eventType := reflect.TypeOf(e).Name()
-
 	var objName interface{}
 
 	switch e := e.(type) {
@@ -38,17 +38,31 @@ func sendEvent(broker broker.Operation, e interface{}) error {
 		objName = types.NamespacedName{Namespace: e.Meta.GetNamespace(), Name: e.Meta.GetName()}
 	}
 
-	log := log.WithFields(log.Fields{
-		"type": eventType,
+	logger := log.WithFields(log.Fields{
+		"type": reflect.TypeOf(e).Name(),
 		"name": objName,
 	})
 
+	logger.Debugln("sending event")
+
 	if err := broker.Send(e); err != nil {
-		log.Errorf("Failed to send event, %v", err)
+		logger.Errorf("failed to send event, %v", err)
 		return err
-	} else {
-		log.Debug("Sending event")
 	}
 
 	return nil
+}
+
+func CreateEventBrokerHandler(spec *v1alpha1.EventBrokerSpec) (handler.EventHandler, Operation, error) {
+	switch {
+	case spec.Kafka != nil:
+		h := NewKafkaHandler(spec.Kafka)
+		return h, h, nil
+
+	case spec.AMQP != nil:
+		h := NewAmqpHandler(spec.AMQP)
+		return h, h, nil
+	}
+
+	return nil, nil, errors.New("no event broker configured")
 }

@@ -4,10 +4,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+CONTROL_PLANE_IP=${CONTROL_PLANE_IP:-}
+KAFKA_NODE_PORT=${KAFKA_NODE_PORT:-30092}
+
 # ref: https://github.com/bitnami/charts/tree/master/bitnami/kafka (note: hostpath provisioner is not working)
 function install_kafka() {
   helm repo add bitnami https://charts.bitnami.com/bitnami
-  helm install kafka bitnami/kafka --set persistence.enabled=false,zookeeper.persistence.enabled=false "${@}"
+  helm install kafka bitnami/kafka \
+    --set persistence.enabled=false \
+    --set zookeeper.persistence.enabled=false \
+    --set externalAccess.service.domain="${CONTROL_PLANE_IP}" \
+    --set externalAccess.enabled=true \
+    --set externalAccess.service.type=NodePort \
+    --set externalAccess.service.nodePort=\{"${KAFKA_NODE_PORT}"\} \
+    "${@}"
 }
 
 function uninstall_kafka() {

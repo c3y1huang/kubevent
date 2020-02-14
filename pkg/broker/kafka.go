@@ -12,7 +12,7 @@ import (
 type KafkaBroker struct {
 	*v1alpha1.KafkaBroker
 
-	producer sarama.SyncProducer
+	producer sarama.AsyncProducer
 	mtx      sync.Mutex
 }
 
@@ -31,19 +31,18 @@ func (k *KafkaBroker) Start() error {
 		return nil
 	}
 
-	kafkaConfig := sarama.NewConfig()
-	kafkaConfig.Producer.RequiredAcks = sarama.WaitForAll
-	kafkaConfig.Producer.Retry.Max = 10
-	kafkaConfig.Producer.Return.Successes = true
+	config := sarama.NewConfig()
+	config.Producer.Return.Successes = true
+	config.Producer.Return.Errors = true
 
 	if k.TlsConfig != nil {
 		if cfg, _ := util.CreateTLSConfig(k.TlsConfig); cfg != nil {
-			kafkaConfig.Net.TLS.Config = cfg
-			kafkaConfig.Net.TLS.Enable = true
+			config.Net.TLS.Config = cfg
+			config.Net.TLS.Enable = true
 		}
 	}
 
-	if p, err := sarama.NewSyncProducer(k.KafkaBroker.Addresses, kafkaConfig); err != nil {
+	if p, err := sarama.NewAsyncProducer(k.KafkaBroker.Addresses, config); err != nil {
 		return err
 	} else {
 		k.producer = p
@@ -75,20 +74,28 @@ func (k *KafkaBroker) Send(msg interface{}) error {
 		return err
 	}
 
-	part, offset, err := k.producer.SendMessage(&sarama.ProducerMessage{
+	k.producer.Input() <- &sarama.ProducerMessage{
 		Topic: k.Topic,
 		Value: sarama.StringEncoder(body),
-	})
-	if err != nil {
-		return err
 	}
-	logrus.WithFields(
-		logrus.Fields{
-			"partition": part,
-			"offset":    offset,
-			"message":   string(body),
-		},
-	).Debugln("message sent")
+
+loop:
+	for {
+		select {
+		case s := <-k.producer.Successes():
+			logrus.WithFields(
+				logrus.Fields{
+					"partition": s.Partition,
+					"offset":    s.Offset,
+					"message":   string(body),
+				},
+			).Traceln("event sent")
+
+			break loop
+		case err := <-k.producer.Errors():
+			return err
+		}
+	}
 
 	return nil
 }

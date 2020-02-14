@@ -120,8 +120,8 @@ func (in *EventBrokerSpec) DeepCopyInto(out *EventBrokerSpec) {
 		*out = new(AMQPBroker)
 		(*in).DeepCopyInto(*out)
 	}
-	if in.GroupVersionKinds != nil {
-		in, out := &in.GroupVersionKinds, &out.GroupVersionKinds
+	if in.WatchResources != nil {
+		in, out := &in.WatchResources, &out.WatchResources
 		*out = make([]*GroupVersionKind, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {

@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	toolscache "k8s.io/client-go/tools/cache"
+	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	controllerruntimehandler "sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -14,6 +15,7 @@ import (
 
 // eventSourceHandler uses the same logic from sigs.k8s.io/controller-runtime@v0.4.0/pkg/source/internal/eventsource.go but without queue
 type eventSourceHandler struct {
+	queue      workqueue.RateLimitingInterface
 	handler    controllerruntimehandler.EventHandler
 	predicates []predicate.Predicate
 }
@@ -44,7 +46,7 @@ func (e eventSourceHandler) OnAdd(obj interface{}) {
 	}
 
 	// Invoke create handler
-	e.handler.Create(c, nil)
+	e.handler.Create(c, e.queue)
 }
 
 func (e eventSourceHandler) OnUpdate(oldObj, newObj interface{}) {
@@ -89,7 +91,7 @@ func (e eventSourceHandler) OnUpdate(oldObj, newObj interface{}) {
 	}
 
 	// Invoke update handler
-	e.handler.Update(u, nil)
+	e.handler.Update(u, e.queue)
 }
 
 func (e eventSourceHandler) OnDelete(obj interface{}) {
@@ -138,5 +140,5 @@ func (e eventSourceHandler) OnDelete(obj interface{}) {
 	}
 
 	// Invoke delete handler
-	e.handler.Delete(d, nil)
+	e.handler.Delete(d, e.queue)
 }

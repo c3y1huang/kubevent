@@ -17,22 +17,23 @@ type DynamicKinds struct {
 	Cache cache.Cache
 }
 
-func (d DynamicKinds) Start(handler handler.EventHandler, queue workqueue.RateLimitingInterface, predicates ...predicate.Predicate) error {
+func (d *DynamicKinds) Start(handler handler.EventHandler, queue workqueue.RateLimitingInterface, predicates ...predicate.Predicate) error {
 	if len(d.GroupVersionKinds) == 0 {
-		return fmt.Errorf("must specify DynamicKinds.GroupVersionKinds")
+		return fmt.Errorf("must specify DynamicKinds.WatchResources")
 	}
 
 	if d.Cache == nil {
 		return fmt.Errorf("must call CacheInto on NativeKinds before calling Start")
 	}
 
+	esh := eventSourceHandler{queue: queue, handler: handler, predicates: predicates}
 	for _, kind := range d.GroupVersionKinds {
 		i, err := d.Cache.GetInformerForKind(kind)
 		if err != nil {
 			return err
 		}
 
-		i.AddEventHandler(eventSourceHandler{handler: handler, predicates: predicates})
+		i.AddEventHandler(esh)
 	}
 
 	return nil

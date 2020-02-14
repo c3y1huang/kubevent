@@ -6,9 +6,10 @@ spec:
   activate: true
   kafka:
     addresses:
-      - localhost:9092
+      - 172.17.0.3:30092
     topic: kubevent
-  resources:
+  watch_all_resources: false
+  watch_resources:
     - group: ""
       version: v1
       kind: Pod

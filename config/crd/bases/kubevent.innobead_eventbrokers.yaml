@@ -88,7 +88,9 @@ spec:
                 - addresses
                 - topic
                 type: object
-              resources:
+              watch_all_resources:
+                type: boolean
+              watch_resources:
                 items:
                   properties:
                     group:
