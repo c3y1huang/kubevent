@@ -14,16 +14,36 @@ Usage:
 EOF
 }
 
-if [[ $# -lt 2 ]]; then
+function show_menu() {
   cat <<EOF
 Usage:
-  install|uninstall kafka|aqmp
+  install kafka
 EOF
+}
+
+if [[ $# -lt 2 ]]; then
+  show_menu
   exit 1
 fi
 
 cmd=$1
 tool=$2
 shift 2
+
+case $cmd in
+  "install") ;;
+  *) 
+    show_menu
+    exit 1
+    ;;
+esac
+
+case $tool in
+  "kafka") ;;
+  *) 
+    show_menu
+    exit 1
+    ;;
+esac
 
 "$cmd"_"$tool" "${@}"

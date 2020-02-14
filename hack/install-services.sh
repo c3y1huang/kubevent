@@ -38,19 +38,39 @@ function uninstall_amqp() {
   helm uninstall rabbitmq "${@}"
 }
 
-if [[ $# -lt 2 ]]; then
+function show_menu() {
   cat <<EOF
 Usage:
-  install|uninstall kafka|aqmp
+  install|uninstall kafka|amqp
 
 Note:
   Make sure you have a running K8s cluster w/ default storage class installed.
 EOF
+}
+
+if [[ $# -lt 2 ]]; then
+  show_menu
   exit 1
 fi
 
 cmd=$1
 service=$2
 shift 2
+
+case $cmd in
+  "install"|"uninstall") ;;
+  *) 
+    show_menu
+    exit 1
+    ;;
+esac
+
+case $service in
+  "kafka"|"amqp") ;;
+  *) 
+    show_menu
+    exit 1
+    ;;
+esac
 
 "$cmd"_"$service" "${@}"
