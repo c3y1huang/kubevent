@@ -28,8 +28,8 @@ type EventBrokerSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	Activate          bool                `json:"activate"`
-	Kafka             *KafkaBroker         `json:"kafka,omitempty"`
-	AMQP              *AMQPBroker          `json:"amqp,omitempty"`
+	Kafka             *KafkaBroker        `json:"kafka,omitempty"`
+	AMQP              *AMQPBroker         `json:"amqp,omitempty"`
 	GroupVersionKinds []*GroupVersionKind `json:"resources,omitempty"`
 }
 
