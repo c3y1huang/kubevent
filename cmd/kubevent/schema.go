@@ -7,7 +7,7 @@ import (
 func NewSchemaCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "schema",
-		Short: "schema, show cluster API resources info",
+		Short: "Schema, show cluster API resources info",
 		Run: func(cmd *cobra.Command, args []string) {
 			for _, t := range scheme.AllKnownTypes() {
 				println(t.String())

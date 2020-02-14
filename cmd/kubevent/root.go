@@ -23,7 +23,7 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
-	cmd.PersistentFlags().StringVar(&logLevel, "log_level", logrus.InfoLevel.String(), "Log level")
+	cmd.PersistentFlags().StringVar(&logLevel, "loglevel", logrus.InfoLevel.String(), "log level")
 
 	cmd.AddCommand(
 		NewServerCmd(),
