@@ -23,7 +23,7 @@ func init() {
 func NewServerCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "server",
-		Short: "server, run event broker controller",
+		Short: "Server, run event broker controller",
 		Run: func(cmd *cobra.Command, args []string) {
 			logrus.Infoln("creating event broker controller manager")
 
