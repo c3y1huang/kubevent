@@ -13,7 +13,7 @@ type NativeKinds struct {
 	// Type is the type of object to watch.  e.g. &v1.Pod{}
 	Types []runtime.Object
 
-	// cache used to watch APIs
+	// Cache used to watch APIs
 	cache cache.Cache
 }
 

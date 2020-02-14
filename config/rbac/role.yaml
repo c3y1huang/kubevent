@@ -9,7 +9,7 @@ rules:
 - apiGroups:
   - kubevent.innobead
   resources:
-  - brokers
+  - eventbroker
   verbs:
   - create
   - delete
@@ -21,7 +21,7 @@ rules:
 - apiGroups:
   - kubevent.innobead
   resources:
-  - brokers/status
+  - eventbroker/status
   verbs:
   - get
   - patch

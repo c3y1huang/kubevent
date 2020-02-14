@@ -105,7 +105,7 @@ func (e eventSourceHandler) OnDelete(obj interface{}) {
 		// If the object doesn't have Metadata, assume it is a tombstone object of type DeletedFinalStateUnknown
 		tombstone, ok := obj.(toolscache.DeletedFinalStateUnknown)
 		if !ok {
-			logrus.Errorln("Error decoding objects.  Expected cache.DeletedFinalStateUnknown",
+			logrus.Errorln("Error decoding objects.  Expected Cache.DeletedFinalStateUnknown",
 				"type", fmt.Sprintf("%T", obj),
 				"object", obj)
 			return

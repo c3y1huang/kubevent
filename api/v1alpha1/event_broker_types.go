@@ -22,16 +22,14 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// BrokerSpec defines the desired state of Broker
-type BrokerSpec struct {
+// EventBrokerSpec defines the desired state of EventBroker
+type EventBrokerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// +kubebuilder:validation:Enum=kafka;amqp
-	Provider          string              `json:"provider"` //TODO need to have validation for values in (kafka)
 	Activate          bool                `json:"activate"`
-	Kafka             KafkaBroker         `json:"kafka,omitempty"`
-	AMQP              AMQPBroker          `json:"amqp,omitempty"`
+	Kafka             *KafkaBroker         `json:"kafka,omitempty"`
+	AMQP              *AMQPBroker          `json:"amqp,omitempty"`
 	GroupVersionKinds []*GroupVersionKind `json:"resources,omitempty"`
 }
 
@@ -65,8 +63,8 @@ type TlsConfig struct {
 	ClientKey  string `json:"client_key,omitempty"`
 }
 
-// BrokerStatus defines the observed state of Broker
-type BrokerStatus struct {
+// EventBrokerStatus defines the observed state of EventBroker
+type EventBrokerStatus struct {
 	Provider string `json:"provider"` //TODO need to have validation for values in (kafka)
 	Name     string `json:"name"`
 	Active   bool   `json:"active"`
@@ -74,24 +72,24 @@ type BrokerStatus struct {
 
 // +kubebuilder:object:root=true
 
-// Broker is the Schema for the brokers API
-type Broker struct {
+// EventBroker is the Schema for the brokers API
+type EventBroker struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   BrokerSpec   `json:"spec,omitempty"`
-	Status BrokerStatus `json:"status,omitempty"`
+	Spec   EventBrokerSpec   `json:"spec,omitempty"`
+	Status EventBrokerStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 
-// BrokerList contains a list of Broker
-type BrokerList struct {
+// EventBrokerList contains a list of EventBroker
+type EventBrokerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Broker `json:"items"`
+	Items           []EventBroker `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Broker{}, &BrokerList{})
+	SchemeBuilder.Register(&EventBroker{}, &EventBrokerList{})
 }

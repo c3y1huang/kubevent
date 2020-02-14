@@ -13,8 +13,8 @@ type DynamicKinds struct {
 	// Type is the type of object to watch.  e.g. &v1.Pod{}
 	GroupVersionKinds []schema.GroupVersionKind
 
-	// cache used to watch APIs
-	cache cache.Cache
+	// Cache used to watch APIs
+	Cache cache.Cache
 }
 
 func (d DynamicKinds) Start(handler handler.EventHandler, queue workqueue.RateLimitingInterface, predicates ...predicate.Predicate) error {
@@ -22,12 +22,12 @@ func (d DynamicKinds) Start(handler handler.EventHandler, queue workqueue.RateLi
 		return fmt.Errorf("must specify DynamicKinds.GroupVersionKinds")
 	}
 
-	if d.cache == nil {
+	if d.Cache == nil {
 		return fmt.Errorf("must call CacheInto on NativeKinds before calling Start")
 	}
 
 	for _, kind := range d.GroupVersionKinds {
-		i, err := d.cache.GetInformerForKind(kind)
+		i, err := d.Cache.GetInformerForKind(kind)
 		if err != nil {
 			return err
 		}

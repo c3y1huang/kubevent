@@ -8,7 +8,7 @@ import (
 )
 
 type KafkaHandler struct {
-	BaseHandler
+	EventHandler
 	broker broker.Operation
 }
 

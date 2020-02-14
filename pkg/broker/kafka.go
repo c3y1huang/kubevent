@@ -36,9 +36,11 @@ func (k *KafkaBroker) Start() error {
 	kafkaConfig.Producer.Retry.Max = 10
 	kafkaConfig.Producer.Return.Successes = true
 
-	if cfg, _ := util.CreateTLSConfig(k.TlsConfig); cfg != nil {
-		kafkaConfig.Net.TLS.Config = cfg
-		kafkaConfig.Net.TLS.Enable = true
+	if k.TlsConfig != nil {
+		if cfg, _ := util.CreateTLSConfig(k.TlsConfig); cfg != nil {
+			kafkaConfig.Net.TLS.Config = cfg
+			kafkaConfig.Net.TLS.Enable = true
+		}
 	}
 
 	if p, err := sarama.NewSyncProducer(k.KafkaBroker.Addresses, kafkaConfig); err != nil {

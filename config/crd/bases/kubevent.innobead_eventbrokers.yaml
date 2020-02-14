@@ -6,20 +6,20 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: brokers.kubevent.innobead
+  name: eventbrokers.kubevent.innobead
 spec:
   group: kubevent.innobead
   names:
-    kind: Broker
-    listKind: BrokerList
-    plural: brokers
-    singular: broker
+    kind: EventBroker
+    listKind: EventBrokerList
+    plural: eventbrokers
+    singular: eventbroker
   scope: Namespaced
   versions:
   - name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: Broker is the Schema for the brokers API
+        description: EventBroker is the Schema for the brokers API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -34,7 +34,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BrokerSpec defines the desired state of Broker
+            description: EventBrokerSpec defines the desired state of EventBroker
             properties:
               activate:
                 type: boolean
@@ -88,11 +88,6 @@ spec:
                 - addresses
                 - topic
                 type: object
-              provider:
-                enum:
-                - kafka
-                - amqp
-                type: string
               resources:
                 items:
                   properties:
@@ -110,10 +105,9 @@ spec:
                 type: array
             required:
             - activate
-            - provider
             type: object
           status:
-            description: BrokerStatus defines the observed state of Broker
+            description: EventBrokerStatus defines the observed state of EventBroker
             properties:
               active:
                 type: boolean

@@ -14,7 +14,7 @@ type Operation interface {
 	Stop() error
 }
 
-type BaseHandler struct {
+type EventHandler struct {
 	handler.EventHandler
 	handler.EnqueueRequestForObject
 }
